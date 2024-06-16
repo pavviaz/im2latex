@@ -1,4 +1,4 @@
-from models.detection.yolo import train_yolo
+import models.detection.yolo as y
 
 
-TYPE_TO_TRAINER = {"yolo": train_yolo}
+TYPE_TO_CLS = {"yolo": y.YoloManager}

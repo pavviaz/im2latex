@@ -354,4 +354,6 @@ MigrationBackup/
 *venv*/
 
 training_data/
+trained_weights/
 tests/
+tmp/

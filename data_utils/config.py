@@ -1,0 +1,4 @@
+LATEXMK_TIMEOUT = 20
+
+TEXT_CLS = "Text"
+Foo_CLS = "Text"
