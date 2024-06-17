@@ -1,0 +1,4 @@
+requests
+streamlit
+streamlit_ace
+streamlit_lottie

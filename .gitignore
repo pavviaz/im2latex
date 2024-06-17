@@ -1,0 +1,9 @@
+venv/
+venv_demo/
+test/
+tests/
+training_data/
+trained_weights/
+training_pipeline/
+data_utils/
+rabbitmq-data/

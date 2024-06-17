@@ -1,0 +1,101 @@
+version: "2.3"
+
+# export CELERY_BROKER_URL=amqp://admin:admin@localhost:5672/ CELERY_RESULT_BACKEND=redis://localhost:6379/0
+
+services:
+  redis:
+    restart: "no"
+    mem_limit: 1G
+    container_name: redis_backend
+
+    image: redis:6.2-alpine
+    
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+      - REDIS_PORT_NUMBER=6379
+    ports:
+      - '6379:6379'
+
+  rabbitmq:
+    restart: "no"
+    mem_limit: 2G
+    container_name: rabbitmq_broker
+
+    image: "rabbitmq:3-management"
+
+    ports:
+      - 5672:5672  # Порт для AMQP
+      - 15672:15672  # Порт для RabbitMQ Management
+
+    volumes:
+      - ./rabbitmq-data:/var/lib/rabbitmq/mnesia
+      - ./rabbit_conf/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+
+    environment:
+      RABBITMQ_ERLANG_COOKIE: ${RABBITMQ_ERLANG_COOKIE}
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_LOGIN}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWD}
+  
+  worker:
+    restart: "no"
+    mem_limit: 8G
+    container_name: worker
+
+    build: 
+      context: ./neural_worker
+      dockerfile: Dockerfile
+    # command: bash -c "celery -A celery_services worker -l info -E -c 1 --loglevel=info"
+    command: bash -c "celery -A celery_services worker -l info -E -P solo --loglevel=info"
+
+    environment:
+      - CELERY_BROKER_URL=${RABBITMQ_IP}
+      - CELERY_RESULT_BACKEND=${REDIS_IP}
+      - OPENAI_KEY=${OPENAI_KEY}
+      
+    depends_on:
+      - redis
+      - rabbitmq
+      
+  celery-flower:
+    image: mher/flower:0.9.7
+    command: ['flower', '--broker=${RABBITMQ_IP}']
+
+    environment:
+      - FLOWER_PORT=5555
+
+    ports:
+      - 5555:5555
+    depends_on:
+      - rabbitmq
+
+  api:
+    restart: "no"
+    mem_limit: 4G
+    container_name: api
+
+    build: 
+      context: ./api
+      dockerfile: Dockerfile
+    command: bash -c "uvicorn app.main:app --host 0.0.0.0 --port 8000"
+
+    environment:
+      - CELERY_BROKER_URL=${RABBITMQ_IP}
+      - CELERY_RESULT_BACKEND=${REDIS_IP}
+
+    ports:
+      - 8000:8000
+    depends_on:
+      - celery-flower
+      - worker
+      - rabbitmq
+
+  # streamlit:
+  #   container_name: streamlit
+  #   build: 
+  #     context: ./streamlit
+  #     dockerfile: Dockerfile
+
+  #   command: ['streamlit', 'run', 'ui.py']
+
+  #   ports:
+  #     - 8501:8501
