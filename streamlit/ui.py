@@ -73,6 +73,9 @@ if uploaded_files and valid_files(uploaded_files) and st.button("OCR this!"):
                 if status_response.status_code == 200:
                     st.session_state.md = status_response.json()["content"]
                     break
+                elif status_response.status_code == 500:
+                    st.error("Something went wrong while file processing...")
+                    break
                 time.sleep(2)
     else:
         raise Exception("Can't send data")
