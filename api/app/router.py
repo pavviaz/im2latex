@@ -65,8 +65,6 @@ async def create_pdf_task(
     else:
         res.forget()
 
-    print(pdf_file)
-
     pdf_binary = await pdf_file.read()
     pdf_imgs = convert_from_bytes(pdf_binary)
 
@@ -97,7 +95,8 @@ async def check_proc_status(proc_task_id: str | None = Cookie(default="-1")):
         Passed as a cookie in the request. Defaults to "-1".
 
     Returns:
-
+        JSONResponse with corresponding message and content
+        if available
     """
     res = AsyncResult(id=proc_task_id)
 

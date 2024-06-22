@@ -5,7 +5,8 @@ DEFAULT_MAP_PROMPT = \
 """
 The given image is the {}st page of the document. 
 Decode it into {} markup preserving every text block, table etc. 
-Insert placeholder instead of images with coordinates of corresponding img on original screenshot. 
+Ignore all the images in document.
+Wrap inline equations with '$ EQUATION $' and separate with '$$\\n EQUATION \\n$$'. DONT PLACE ANY MUMBERS AFTER IT!
 Write nothing more but {}.
 Always put '```{}' before and '```' after doc respectively
 """
@@ -18,6 +19,8 @@ This is {}-pages document, decoded in {}.
 The pages are splitted with '{}'.
 Combine them into one single document, preserving all the contents.
 Write nothing more but combined document.
+Dont place any numbers after the equations.
+If you work with LaTeX, add all the necessary packages in the beginning.
 Always put '```{}' before and '```' after doc respectively.
 
 Pages:

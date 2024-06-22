@@ -4,121 +4,99 @@ import requests
 
 import streamlit as st
 import streamlit_ace as st_ace
-from streamlit_lottie import st_lottie
+from streamlit_lottie import st_lottie_spinner
+
+from config import API_PDF, API_STATUS, ANIM_PATH
 
 
-API_PDF = "http://127.0.0.1:8000/pdf"
-API_STATUS = "http://127.0.0.1:8000/status"
+st.set_page_config(page_title="DeepScriptum", page_icon="📘", layout="wide")
 
+st.title("📘 :violet[Deep]Scriptum")
 
-st.set_page_config(page_title="Загрузка файлов и редактор", page_icon="📄")
-
-# Custom CSS for styling
-st.markdown(
-    """
-    <style>
-    .upload-area {
-        border: 2px dashed #cccccc;
-        padding: 20px;
-        text-align: center;
-        transition: background-color 0.3s ease;
-    }
-    .upload-area:hover {
-        background-color: #f0f0f0;
-    }
-    .status-message {
-        font-size: 1.2em;
-        margin-top: 20px;
-    }
-    .editor-container {
-        margin-top: 20px;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
+st.header(
+    "This is DeepScriptum demo page, showing the "
+    "capabilities of modern VLLMs to perform "
+    "end2end OCR over any document"
 )
 
-st.title("Загрузка файлов и редактор")
+st.divider()
 
-# Выбор формата результата
-result_format = st.radio("Выберите формат результата:", ("md", "latex"))
+st.subheader("Use fields below to perform doc recogniton!")
 
-# Единое поле для загрузки PDF и изображений
+result_format = st.radio("Choose output format:", ("md", "latex"), key="result_format")
+
 uploaded_files = st.file_uploader(
-    "Перетащите сюда PDF или изображения (PNG, JPG)",
+    "Drag PDF file or images here (PNG, JPG)",
     type=["pdf", "png", "jpg"],
     accept_multiple_files=True,
-    help="Вы можете загрузить PDF или изображения (PNG, JPG)",
+    help="You can upload PDF or images (PNG, JPG)",
+    key="uploaded_files",
 )
 
 
-# Проверка корректности загрузки файлов
 def valid_files(files):
     if len(files) == 1 and files[0].type == "application/pdf":
         return True
     elif all(file.type in ["image/png", "image/jpeg"] for file in files):
-        return True
+        # TODO it should be possible
+        return False
     else:
         return False
 
 
 if uploaded_files and not valid_files(uploaded_files):
-    st.error(
-        "Вы можете загрузить либо один PDF файл, либо несколько изображений (PNG, JPG)."
-    )
+    st.error("For now only PDFs are available to upload")
 
 
-# Функция для загрузки Lottie-анимаций из URL или локального файла
 def load_lottiefile(filepath: str):
     with open(filepath, "r") as f:
         return json.load(f)
 
 
-# Загрузка Lottie-анимации
-lottie_spinner = load_lottiefile("static/lottie_anim.json")
+lottie_spinner = load_lottiefile(ANIM_PATH)
 
 if "s" not in st.session_state:
     st.session_state.s = requests.Session()
 
-# Кнопка для отправки файлов
-if uploaded_files and valid_files(uploaded_files) and st.button("Отправить на сервер"):
+
+if uploaded_files and valid_files(uploaded_files) and st.button("OCR this!"):
     files = [("pdf_file", (file.name, file, file.type)) for file in uploaded_files]
     r = st.session_state.s.post(
         url=API_PDF, data={"decode_type": result_format}, files=files
     )
 
     if r.status_code == 201:
-        st.success("Файлы успешно загружены. Ожидание завершения обработки...")
-
-        # Отображение Lottie-анимации
-        with st.echo():
-            st_lottie(lottie_spinner, height=600, width=600)
-            # Проверка статуса задачи
+        with st_lottie_spinner(lottie_spinner, height=600, width=600):
             status_response = -1
             while status_response != 200:
                 status_response = st.session_state.s.get(API_STATUS)
-                status = status_response.json().get("msg")
                 if status_response.status_code == 200:
-                    st.success(status)
+                    st.session_state.md = status_response.json()["content"]
                     break
-                # elif status_response.status_code == 202:
-                #     st.warning(status)
-                # elif status_response.status_code == 500:
-                #     st.error(status)
                 time.sleep(2)
+    else:
+        raise Exception("Can't send data")
 
-        # Редактор текста
-        edited_text = st_ace.st_ace(
-            value=status_response.json()["content"],
-            language="text",
-            theme="monokai",
+if "md" in st.session_state:
+    col1, col2 = st.columns(2)
+    with col1:
+        st.session_state.md = st_ace.st_ace(
+            value=st.session_state.md,
+            language="markdown" if result_format == "md" else "latex",
+            theme="chrome",
             key="editor",
+            height="700px",
+            wrap=True,
         )
 
-        # Сохранение отредактированного текста
-        if st.button("Сохранить отредактированный текст"):
-            with open("edited_text.txt", "w") as f:
-                f.write(edited_text)
-            st.success("Текст сохранен успешно!")
-    else:
-        st.error(f"Ошибка при загрузке файлов")
+    with col2:
+        custom_html = f"""
+            <div style="height: 707px; overflow-y: auto; border: 1px solid #ccc; padding: 10px;">
+            {st.session_state.md}
+            </div>
+            """
+        st.write(custom_html, unsafe_allow_html=True)
+
+    st.download_button(
+        "Download edited file", st.session_state.md, file_name=f"file.{result_format}"
+    )

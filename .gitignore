@@ -1,3 +1,9 @@
+.DS_Store
+
+.vscode
+
+__pycache__
+
 venv/
 venv_demo/
 test/
@@ -7,3 +13,5 @@ trained_weights/
 training_pipeline/
 data_utils/
 rabbitmq-data/
+
+.env
