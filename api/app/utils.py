@@ -6,6 +6,7 @@ from io import BytesIO
 import pandas as pd
 from pdf2image import convert_from_bytes
 import base64
+from PIL import Image
 
 async def process_file(byte_data):
     estimator_dict = {
@@ -13,7 +14,8 @@ async def process_file(byte_data):
         "docx": process_docx,
         "doc": process_doc,
         "txt": process_txt,
-        "xlsx": process_xlsx
+        "xlsx": process_xlsx,
+        "image": process_image
     }
     file_type = await detect_file_type(byte_data)
     if file_type == "unknown":
@@ -30,19 +32,24 @@ async def detect_file_type(byte_data):
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
         "application/msword": "doc",
         "text/plain": "txt",
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx"
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
+        "image/jpeg": "image",
+        "image/png": "image",
+        "image/gif": "image",
+        "image/bmp": "image",
+        "image/tiff": "image"
     }
     return mime_types.get(mime.from_buffer(byte_data), "unknown")
 
 async def extract_text_from_docx(docx_bytes):
-    doc = Document(docx_bytes)
+    doc = Document(BytesIO(docx_bytes))
     full_text = []
     for paragraph in doc.paragraphs:
         full_text.append(paragraph.text)
     return '\n'.join(full_text)
 
 async def extract_text_from_doc(doc_bytes):
-    result = mammoth.extract_raw_text(doc_bytes)
+    result = mammoth.extract_raw_text(BytesIO(doc_bytes))
     return result.value
 
 async def process_text(text, max_length=3000):
@@ -88,3 +95,10 @@ async def process_pdf(byte_data):
         pdf_base64.append(base64.b64encode(buffered.getvalue()).decode())
     
     return pdf_base64
+
+async def process_image(byte_data):
+    image = Image.open(BytesIO(byte_data))
+    buffered = BytesIO()
+    image.save(buffered, format="JPEG")
+    img_base64 = base64.b64encode(buffered.getvalue()).decode()
+    return [img_base64]
