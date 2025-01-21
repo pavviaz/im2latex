@@ -1,11 +1,7 @@
-MODEL_NAME = "gpt-4o"
-OPENAI_API = "https://api.openai.com/v1/chat/completions"
-
 DEFAULT_MAP_PROMPT = \
 """
-The given image is the {}st page of the document. 
+The given datais the {}st page of the document. 
 Decode it into {} markup preserving every text block, table etc. 
-Ignore all the images in document.
 Wrap inline equations with '$ EQUATION $' and separate with '$$\\n EQUATION \\n$$'. DONT PLACE ANY MUMBERS AFTER IT!
 Write nothing more but {}.
 Always put '```{}' before and '```' after doc respectively
