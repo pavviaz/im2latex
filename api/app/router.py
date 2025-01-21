@@ -1,16 +1,15 @@
 import os
 import uuid
-from io import BytesIO
-import base64
+# from io import BytesIO
+# import base64
 
 from fastapi import APIRouter, UploadFile, File, Cookie, Form
 from fastapi.responses import JSONResponse
 from fastapi import status
 from celery import Celery
 from celery.result import AsyncResult
-from pdf2image import convert_from_bytes
 
-from utils import process_file
+from app.utils import process_file
 
 
 celery = Celery(__name__)
@@ -70,15 +69,12 @@ async def create_transform_task(
     file_binary = await file.read()
 
     file_type, data = await process_file(file_binary)
-    
-    # pdf_base64 = []
-    # for img in pdf_imgs:
-    #     buffered = BytesIO()
-    #     img.save(buffered, format="JPEG")
-    #     pdf_base64.append(base64.b64encode(buffered.getvalue()).decode())
 
     task_id = str(uuid.uuid4())
-    celery.send_task("images", args=(pdf_base64, decode_type), task_id=task_id)
+    if file_type in ["pdf", "image"]:
+        celery.send_task("images", args=(data, decode_type), task_id=task_id)
+    else:
+        celery.send_task("texts", args=(data, decode_type), task_id=task_id)
 
     resp = JSONResponse(
         status_code=status.HTTP_201_CREATED,
