@@ -6,9 +6,9 @@ from app.router import router as router_dwnl
 
 
 app = FastAPI(
-    title="DeepScriptum API",
-    description="This service uses VLLM to perfom \
-    LaTeX/MD OCR on any input document",
+    title="file2md API",
+    description="This service uses VLLM to transform any document \
+    to MD via OCR",
     version="0.0.1",
     redoc_url=None
 )
