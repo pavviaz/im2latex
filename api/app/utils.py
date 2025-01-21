@@ -19,7 +19,7 @@ async def process_file(byte_data):
     }
     file_type = await detect_file_type(byte_data)
     if file_type == "unknown":
-        return ""
+        return "txt", ["unknown"]
     estimator = estimator_dict[file_type]
     data = await estimator(byte_data)
 
@@ -98,6 +98,9 @@ async def process_pdf(byte_data):
 
 async def process_image(byte_data):
     image = Image.open(BytesIO(byte_data))
+    if image.mode in ('RGBA', 'P', 'LA'):
+        image = image.convert('RGB')
+    
     buffered = BytesIO()
     image.save(buffered, format="JPEG")
     img_base64 = base64.b64encode(buffered.getvalue()).decode()

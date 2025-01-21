@@ -1,3 +1,4 @@
 celery==5.3.4
 redis
 requests
+openai==1.57.0

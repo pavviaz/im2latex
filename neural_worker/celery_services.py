@@ -108,6 +108,8 @@ def _apply_reduce_ocr(texts: List[str], decode_type: str, replacer: tuple):
 )
 def process_texts(self, texts: List[str], decode_type: str):
     replacer = REPLACERS[decode_type]
+    if texts == ["unknown"]:
+        return "Unknown data type"
     texts_enum = [(idx, text, replacer) for idx, text in enumerate(texts)]
 
     try:

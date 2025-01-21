@@ -1,6 +1,8 @@
+MODEL_NAME = "gpt-4o"
+
 DEFAULT_MAP_PROMPT = \
 """
-The given datais the {}st page of the document. 
+The given data is the {}st page of the document. 
 Decode it into {} markup preserving every text block, table etc. 
 Wrap inline equations with '$ EQUATION $' and separate with '$$\\n EQUATION \\n$$'. DONT PLACE ANY MUMBERS AFTER IT!
 Write nothing more but {}.
