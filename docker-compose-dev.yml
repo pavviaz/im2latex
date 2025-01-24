@@ -1,8 +1,24 @@
-version: "2.3"
-
 # export CELERY_BROKER_URL=amqp://admin:admin@localhost:5672/ CELERY_RESULT_BACKEND=redis://localhost:6379/0
 
 services:
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+
+    ports:
+      - "${MINIO_API_PORT}:${MINIO_API_PORT}"  # api
+      - "${MINIO_CONSOLE_PORT}:${MINIO_CONSOLE_PORT}"  # console
+
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+
+    volumes:
+      - ./minio_data:/data
+      - ./minio_config:/root/.minio
+
+    command: server /data --console-address ":${MINIO_CONSOLE_PORT}"
+
   redis:
     restart: "no"
     mem_limit: 1G
@@ -12,9 +28,9 @@ services:
     
     environment:
       - ALLOW_EMPTY_PASSWORD=yes
-      - REDIS_PORT_NUMBER=6379
+      - REDIS_PORT_NUMBER=${REDIS_PORT}
     ports:
-      - '6379:6379'
+      - "${REDIS_PORT}:${REDIS_PORT}"
 
   rabbitmq:
     restart: "no"
@@ -24,8 +40,8 @@ services:
     image: "rabbitmq:3-management"
 
     ports:
-      - 5672:5672  # Порт для AMQP
-      - 15672:15672  # Порт для RabbitMQ Management
+      - "${RABBITMQ_AMQP_PORT}:${RABBITMQ_AMQP_PORT}"  # api
+      - "${RABBITMQ_CONSOLE_PORT}:${RABBITMQ_CONSOLE_PORT}"  # console
 
     volumes:
       - ./rabbitmq-data:/var/lib/rabbitmq/mnesia
@@ -34,68 +50,78 @@ services:
     environment:
       RABBITMQ_ERLANG_COOKIE: ${RABBITMQ_ERLANG_COOKIE}
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_LOGIN}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWD}
-  
-  worker:
-    restart: "no"
-    mem_limit: 8G
-    container_name: worker
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
 
-    build: 
-      context: ./neural_worker
-      dockerfile: Dockerfile
-    # command: bash -c "celery -A celery_services worker -l info -E -c 1 --loglevel=info"
-    command: bash -c "celery -A celery_services worker -l info -E -P solo --loglevel=info"
+  # worker:
+  #   restart: "no"
+  #   mem_limit: 8G
+  #   container_name: worker
 
-    environment:
-      - CELERY_BROKER_URL=${RABBITMQ_IP}
-      - CELERY_RESULT_BACKEND=${REDIS_IP}
-      - OPENAI_KEY=${OPENAI_KEY}
-      
-    depends_on:
-      - redis
-      - rabbitmq
-      
-  celery-flower:
-    image: mher/flower:0.9.7
-    command: ['flower', '--broker=${RABBITMQ_IP}']
-
-    environment:
-      - FLOWER_PORT=5555
-
-    ports:
-      - 5555:5555
-    depends_on:
-      - rabbitmq
-
-  api:
-    restart: "no"
-    mem_limit: 4G
-    container_name: api
-
-    build: 
-      context: ./api
-      dockerfile: Dockerfile
-    command: bash -c "uvicorn app.main:app --host 0.0.0.0 --port 8000"
-
-    environment:
-      - CELERY_BROKER_URL=${RABBITMQ_IP}
-      - CELERY_RESULT_BACKEND=${REDIS_IP}
-
-    ports:
-      - 8000:8000
-    depends_on:
-      - celery-flower
-      - worker
-      - rabbitmq
-
-  # streamlit:
-  #   container_name: streamlit
   #   build: 
-  #     context: ./streamlit
+  #     context: ./neural_worker
   #     dockerfile: Dockerfile
+  #   # command: bash -c "celery -A celery_services worker -l info -E -c 1 --loglevel=info"
+  #   command: bash -c "celery -A celery_services worker -l info -E -P solo --loglevel=info"
 
-  #   command: ['streamlit', 'run', 'ui.py']
+  #   environment:
+  #     - CELERY_BROKER_URL=${RABBITMQ_IP}
+  #     - CELERY_RESULT_BACKEND=${REDIS_IP}
+  #     - OPENAI_KEY=${OPENAI_KEY}
+      
+  #   depends_on:
+  #     - redis
+  #     - rabbitmq
+      
+  # celery-flower:
+  #   image: mher/flower:0.9.7
+  #   command: ['flower', '--broker=${RABBITMQ_IP}']
+
+  #   environment:
+  #     - FLOWER_PORT=5555
 
   #   ports:
-  #     - 8501:8501
+  #     - 5555:5555
+  #   depends_on:
+  #     - rabbitmq
+
+  backend:
+    restart: "no"
+    mem_limit: 4G
+    container_name: backend_api
+
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    command: bash -c "uvicorn api.api:app --host 0.0.0.0 --port ${API_PORT}"
+
+    volumes:
+      - ./backend:/backend
+
+    env_file:
+      - ./.env
+
+    ports:
+      - "${API_PORT}:${API_PORT}"
+    depends_on:
+      # - celery-flower
+      # - worker
+      - rabbitmq
+
+  postgres:
+    restart: always
+    container_name: postgres
+    mem_limit: 100m
+    image: postgres:13.3
+
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PGDATA: "/var/lib/postgresql/data/pgdata"
+
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data/pgdata
+
+    command: "-p ${POSTGRES_PORT}"
+    ports:
+      - "${POSTGRES_PORT}:${POSTGRES_PORT}"

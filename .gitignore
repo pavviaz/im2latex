@@ -13,5 +13,8 @@ trained_weights/
 training_pipeline/
 data_utils/
 rabbitmq-data/
+pgdata/
+minio_config/
+minio_data/
 
 .env

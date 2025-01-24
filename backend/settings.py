@@ -2,8 +2,6 @@ import os
 
 from pydantic_settings import BaseSettings
 
-RUN_LEVEL = os.getenv("RUN_LEVEL", "development")
-
 
 class ToolConfig:
     env_file_encoding = "utf8"
@@ -17,8 +15,47 @@ class AppSettings(BaseSettings):
     JWT_EXPIRES_H: int = 48
     COOKIE_NAME: str = "deepscriptum_cookie"
 
+    HC_TIMEOUT: int = 30  # secs
+    HC_SLEEP: int = 5  # secs
+
     class Config(ToolConfig):
-        env_prefix = "app_"
+        env_prefix = "api_"
+
+
+class RedisSettings(BaseSettings):
+    HOST: str = "redis"
+    PORT: int = 6379
+    DB: int = 0
+
+    URI: str = f"redis://{HOST}:{PORT}/{DB}"
+
+    class Config(ToolConfig):
+        env_prefix = "redis_"
+
+
+class RabbitMQSettings(BaseSettings):
+    HOST: str = "rabbitmq"
+    AMQP_PORT: int = 5672
+    LOGIN: str = "admin"
+    PASSWORD: str = "admin"
+
+    URI: str = f"amqp://{LOGIN}:{PASSWORD}@{HOST}:{AMQP_PORT}/"
+
+    class Config(ToolConfig):
+        env_prefix = "rabbitmq_"
+
+
+class MinIOSettings(BaseSettings):
+    HOST: str = "minio"
+    BUCKET: str = "user_docs"
+    API_PORT: int = 9000
+    ROOT_USER: str = "admin"
+    ROOT_PASSWORD: str = "admin_password"
+
+    URI: str = f"http://{HOST}:{API_PORT}"
+
+    class Config(ToolConfig):
+        env_prefix = "minio_"
 
 
 class PostgresSettings(BaseSettings):
@@ -39,3 +76,6 @@ class PostgresSettings(BaseSettings):
 
 postgres_settings = PostgresSettings()
 app_settings = AppSettings()
+redis_settings = RedisSettings()
+minio_settings = MinIOSettings()
+rabbitmq_settings = RabbitMQSettings()
