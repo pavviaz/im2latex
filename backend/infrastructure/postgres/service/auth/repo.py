@@ -14,6 +14,9 @@ from settings import app_settings
 
 
 class UserAuthRepository:
+    def __init__(self, session):
+        self.session = session
+
     @classmethod
     def hash_password(cls, password: str) -> str:
         return bcrypt.hash(password)

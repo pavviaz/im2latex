@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import String, ForeignKey, TIMESTAMP
+from sqlalchemy import String, ForeignKey, TIMESTAMP, Enum
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
 
@@ -40,4 +40,4 @@ class DocumentUserDAO(Base):
     last_access_at: Mapped[datetime] = mapped_column(
         TIMESTAMP, server_default=func.now()
     )
-    role: Mapped[RoleEnum] = mapped_column(type_=RoleEnum)
+    role: Mapped[RoleEnum] = mapped_column(type_=Enum(RoleEnum))

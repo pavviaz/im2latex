@@ -4,7 +4,7 @@ from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
 
 from infrastructure.postgres.database import async_session_factory
-from routers import auth_router
+from .routers import auth_router
 
 origins = ["*"]
 middleware = [
