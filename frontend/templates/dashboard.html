@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            display: flex;
+            height: 100vh;
+        }
+        .sidebar {
+            width: 250px;
+            background-color: #f8f9fa;
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
+        .sidebar h2 {
+            margin-top: 0;
+            font-size: 1.2em;
+        }
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+        }
+        .sidebar ul li {
+            margin: 10px 0;
+        }
+        .sidebar ul li a {
+            text-decoration: none;
+            color: #333;
+            padding: 10px;
+            display: block;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+            cursor: pointer;
+        }
+        .sidebar ul li a:hover {
+            background-color: #e2e6ea;
+        }
+        .content {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        .content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .content-header h1 {
+            margin: 0;
+            font-size: 1.5em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .small-text {
+            font-size: 0.7em;
+            color: #666;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+        .button-group button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .button-group button:hover {
+            background-color: #0056b3;
+        }
+        .content-area {
+            display: flex;
+            margin-top: 20px;
+            gap: 20px;
+        }
+        .text-area {
+            width: 50%;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            overflow-y: auto;
+            height: calc(100vh - 100px);
+        }
+        .text-area[contenteditable="true"]:focus {
+            outline: 2px solid #007bff;
+        }
+        .file-upload {
+            margin-bottom: 20px;
+        }
+        #fileUpload {
+            display: none;
+        }
+        .file-upload label {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .file-upload label:hover {
+            background-color: #0056b3;
+        }
+        .progress-bar {
+            width: 100%;
+            background-color: #e9ecef;
+            border-radius: 5px;
+            margin-top: 10px;
+            display: none;
+        }
+        .progress-bar-inner {
+            height: 10px;
+            width: 0;
+            background-color: #007bff;
+            border-radius: 5px;
+        }
+        .popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            display: none;
+            z-index: 1000;
+            width: 350px;
+            max-height: 400px;
+            overflow-y: auto;
+            border-radius: 8px;
+        }
+        .popup h2 {
+            margin-top: 0;
+            font-size: 1.2em;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+        .popup ul {
+            list-style: none;
+            padding: 0;
+            margin-bottom: 20px;
+        }
+        .popup ul li {
+            margin: 10px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .popup ul li select, .popup .access-type select {
+            margin-left: 10px;
+            padding: 5px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            width: 100px;
+        }
+        .popup p, .popup .access-type {
+            margin: 10px 0;
+            font-size: 0.9em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .popup a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        .popup a:hover {
+            text-decoration: underline;
+        }
+        .popup button {
+            padding: 8px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            display: block;
+            margin: 20px auto 0;
+            width: 80px;
+            text-align: center;
+        }
+        .popup button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2>Files</h2>
+        <div class="file-upload">
+            <label for="fileUpload">Choose File</label>
+            <input type="file" id="fileUpload">
+            <div class="progress-bar">
+                <div class="progress-bar-inner"></div>
+            </div>
+        </div>
+        <ul id="fileList">
+            <li><a href="#">2204.08387.note</a></li>
+            <li><a href="#">2101.10804.note</a></li>
+            <li><a href="#">2204.08387.pdf</a></li>
+        </ul>
+    </div>
+
+    <div class="content">
+        <div class="content-header">
+            <h1 id="documentTitle">2204.08387<span class="small-text">Saved January 12, 2024</span></h1>
+            <div class="button-group">
+                <button id="downloadButton">Download</button>
+                <button id="shareButton">Share</button>
+                <button id="logoffButton">Log Off</button>
+            </div>
+        </div>
+        <div class="content-area">
+            <div class="text-area" contenteditable="true">
+                <pre>
+\title{
+LayoutLMv3: Pre-training for Document AI with Unified Text and Image Masking
+}
+
+\author{
+Yupan Huang \\ Sun Yat-sen University \\ huangyp28@mail2.sysu.edu.cn
+}
+
+\begin{abstract}
+Self-supervised pre-training techniques have achieved remarkable progress in Document AI...
+\end{abstract>
+                </pre>
+            </div>
+            <div class="text-area">
+                <h2>Abstract</h2>
+                <p>
+                    Self-supervised pre-training techniques have achieved remarkable progress in Document AI...
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="popup" id="sharePopup">
+        <h2>Share Document</h2>
+        <ul id="accessList">
+            <!-- Заглушка для пользователей -->
+            <li>
+                owner123 (me)
+                <select>
+                    <option>owner</option>
+                    <option>editor</option>
+                    <option>viewer</option>
+                </select>
+            </li>
+            <li>
+                chmo1
+                <select>
+                    <option>viewer</option>
+                    <option>editor</option>
+                    <option>owner</option>
+                </select>
+            </li>
+            <li>
+                chmo2
+                <select>
+                    <option>editor</option>
+                    <option>viewer</option>
+                    <option>owner</option>
+                </select>
+            </li>
+        </ul>
+        <p>Share link: <a href="#">http://example.com/document</a></p>
+        <div class="access-type">
+            Access type:
+            <select>
+                <option>editor</option>
+                <option>viewer</option>
+                <option>private</option>
+            </select>
+        </div>
+        <button onclick="closePopup()">Close</button>
+    </div>
+
+    <script>
+        // Обработка загрузки файла
+        document.getElementById('fileUpload').addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                const progressBarInner = document.querySelector('.progress-bar-inner');
+                document.querySelector('.progress-bar').style.display = 'block';
+
+                let progress = 0;
+                const interval = setInterval(() => {
+                    progress += 10;
+                    progressBarInner.style.width = progress + '%';
+
+                    if (progress >= 100) {
+                        clearInterval(interval);
+                        const fileList = document.getElementById('fileList');
+                        const newFileItem = document.createElement('li');
+                        newFileItem.innerHTML = `<a href="#">${file.name}</a>`;
+                        fileList.appendChild(newFileItem);
+
+                        document.querySelector('.progress-bar').style.display = 'none';
+                    }
+                }, 100);
+
+                // Комментарий для реального запроса
+                /*
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', '/upload-endpoint', true);
+
+                xhr.upload.onprogress = function(e) {
+                    if (e.lengthComputable) {
+                        const percentComplete = (e.loaded / e.total) * 100;
+                        progressBarInner.style.width = percentComplete + '%';
+                        document.querySelector('.progress-bar').style.display = 'block';
+                    }
+                };
+
+                xhr.onload = function() {
+                    if (xhr.status === 200) {
+                        const fileList = document.getElementById('fileList');
+                        const newFileItem = document.createElement('li');
+                        newFileItem.innerHTML = `<a href="#">${file.name}</a>`;
+                        fileList.appendChild(newFileItem);
+                    }
+                    document.querySelector('.progress-bar').style.display = 'none';
+                };
+
+                xhr.send(formData);
+                */
+            }
+        });
+
+        // Обработка нажатия на элемент списка файлов
+        document.getElementById('fileList').addEventListener('click', function(e) {
+            if (e.target && e.target.nodeName === 'A') {
+                const fileName = e.target.textContent;
+                const contentHeader = document.getElementById('documentTitle');
+                contentHeader.innerHTML = `${fileName}<span class="small-text"> Saved January 12, 2024</span>`;
+
+                // Комментарий для реального запроса
+                /*
+                const xhr = new XMLHttpRequest();
+                xhr.open('GET', `/file-endpoint?name=${encodeURIComponent(fileName)}`, true);
+
+                xhr.onload = function() {
+                    if (xhr.status === 200) {
+                        const contentHeader = document.getElementById('documentTitle');
+                        contentHeader.textContent = fileName;
+                        // Дополнительная логика для обновления содержимого
+                    }
+                };
+
+                xhr.send();
+                */
+            }
+        });
+
+        // Обработка нажатия на кнопку "Download"
+        document.getElementById('downloadButton').addEventListener('click', function() {
+            // Заглушка для имитации выгрузки файла
+            alert('Файл успешно выгружен!');
+
+            // Комментарий для реального запроса
+            /*
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/download-endpoint', true);
+
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    alert('Файл успешно выгружен!');
+                }
+            };
+
+            xhr.send();
+            */
+        });
+
+        // Обработка нажатия на кнопку "Share"
+        document.getElementById('shareButton').addEventListener('click', function() {
+            const popup = document.getElementById('sharePopup');
+            popup.style.display = 'block';
+
+            // Заглушка для заполнения списка пользователей
+            const accessList = document.getElementById('accessList');
+            accessList.innerHTML = `
+                <li>
+                    owner123 (me)
+                    <select>
+                        <option>owner</option>
+                        <option>editor</option>
+                        <option>viewer</option>
+                    </select>
+                </li>
+                <li>
+                    chmo1
+                    <select>
+                        <option>viewer</option>
+                        <option>editor</option>
+                        <option>owner</option>
+                    </select>
+                </li>
+                <li>
+                    chmo2
+                    <select>
+                        <option>editor</option>
+                        <option>viewer</option>
+                        <option>owner</option>
+                    </select>
+                </li>
+            `;
+
+            // Комментарий для реального запроса
+            /*
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', '/access-list-endpoint', true);
+
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    const users = JSON.parse(xhr.responseText);
+                    accessList.innerHTML = '';
+                    users.forEach(user => {
+                        const listItem = document.createElement('li');
+                        listItem.innerHTML = `
+                            ${user.name}
+                            <select>
+                                <option ${user.role === 'owner' ? 'selected' : ''}>owner</option>
+                                <option ${user.role === 'editor' ? 'selected' : ''}>editor</option>
+                                <option ${user.role === 'viewer' ? 'selected' : ''}>viewer</option>
+                            </select>
+                        `;
+                        accessList.appendChild(listItem);
+                    });
+                }
+            };
+
+            xhr.send();
+            */
+        });
+
+        // Обработка нажатия на кнопку "Log Off"
+        document.getElementById('logoffButton').addEventListener('click', function() {
+            // Заглушка для выхода
+            alert('Выход выполнен.');
+
+            // Закомментированное обращение к бэку
+            /*
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/logoff-endpoint', true);
+
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    window.location.href = 'index.html';
+                }
+            };
+
+            xhr.send();
+            */
+
+            // Временная заглушка
+            window.location.href = 'index.html';
+        });
+
+        // Закрытие popup
+        function closePopup() {
+            const popup = document.getElementById('sharePopup');
+            popup.style.display = 'none';
+        }
+    </script>
+
+</body>
+</html>
