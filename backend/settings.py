@@ -1,5 +1,3 @@
-import os
-
 from pydantic_settings import BaseSettings
 
 
@@ -68,7 +66,6 @@ class PostgresSettings(BaseSettings):
     POOL_SIZE: int = 15
 
     URI: str = f"postgresql+asyncpg://{USER}:{PASSWORD}@{HOST}:{PORT}/{DB}"
-    ALEMBIC_URI: str = f"postgresql://{USER}:{PASSWORD}@{HOST}:{PORT}/{DB}"
 
     class Config(ToolConfig):
         env_prefix = "postgres_"

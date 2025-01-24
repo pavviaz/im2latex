@@ -92,7 +92,7 @@ services:
     build: 
       context: ./backend
       dockerfile: Dockerfile
-    command: bash -c "uvicorn api.api:app --host 0.0.0.0 --port ${API_PORT}"
+    command: bash -c "alembic -c infrastructure/postgres/alembic.ini upgrade head && uvicorn api.api:app --host 0.0.0.0 --port ${API_PORT}"
 
     volumes:
       - ./backend:/backend
