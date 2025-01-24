@@ -1,4 +1,5 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import computed_field
 
 
 class ToolConfig:
@@ -65,8 +66,11 @@ class PostgresSettings(BaseSettings):
     MAX_OVERFLOW: int = 15
     POOL_SIZE: int = 15
 
-    URI: str = f"postgresql+asyncpg://{USER}:{PASSWORD}@{HOST}:{PORT}/{DB}"
-
+    @computed_field(return_type=str)
+    @property
+    def URI(self):
+        return f"postgresql+asyncpg://{self.USER}:{self.PASSWORD}@{self.HOST}:{self.PORT}"
+    
     class Config(ToolConfig):
         env_prefix = "postgres_"
 
