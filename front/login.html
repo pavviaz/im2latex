@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign Up Page</title>
+    <title>Login Page</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -15,7 +15,7 @@
             height: 100vh;
             margin: 0;
         }
-        .signup-container {
+        .login-container {
             background-color: white;
             padding: 40px;
             border-radius: 8px;
@@ -26,16 +26,15 @@
         .logo {
             margin-bottom: 20px;
         }
-        .signup-container input[type="text"],
-        .signup-container input[type="password"],
-        .signup-container input[type="email"] {
+        .login-container input[type="text"],
+        .login-container input[type="password"] {
             width: 100%;
             padding: 10px;
             margin: 10px 0;
             border: 1px solid #ddd;
             border-radius: 4px;
         }
-        .signup-container button {
+        .login-container button {
             width: 100%;
             padding: 10px;
             background-color: #007bff;
@@ -44,16 +43,16 @@
             border-radius: 4px;
             cursor: pointer;
         }
-        .signup-container button:hover {
+        .login-container button:hover {
             background-color: #0056b3;
         }
-        .signup-container a {
+        .login-container a {
             display: block;
             margin-top: 10px;
             color: #007bff;
             text-decoration: none;
         }
-        .signup-container a:hover {
+        .login-container a:hover {
             text-decoration: underline;
         }
         .footer {
@@ -66,14 +65,13 @@
 </head>
 <body>
 
-    <div class="signup-container">
+    <div class="login-container">
         <img src="logo.png" alt="Logo" class="logo" width="50">
-        <h2>Sign Up</h2>
-        <input type="text" placeholder="Enter your name">
-        <input type="email" placeholder="Enter your email address">
+        <h2>Log in</h2>
+        <input type="text" placeholder="Enter your email address">
         <input type="password" placeholder="Password">
-        <button id="signupButton">Sign up</button>
-        <p>Already have an account? <a href="login.html">Log in</a></p>
+        <button id="loginButton">Log in</button>
+        <p>Don't have an account yet? <a href="signup.html">Sign up</a></p>
     </div>
 
     <div class="footer">
@@ -81,15 +79,15 @@
     </div>
 
     <script>
-        // Обработка нажатия на кнопку "Sign up"
-        document.getElementById('signupButton').addEventListener('click', function() {
-            // Заглушка для регистрации
-            alert('Регистрация выполнена.');
+        // Обработка нажатия на кнопку "Log in"
+        document.getElementById('loginButton').addEventListener('click', function() {
+            // Заглушка для входа
+            alert('Вход выполнен.');
 
             // Закомментированное обращение к бэку
             /*
             const xhr = new XMLHttpRequest();
-            xhr.open('POST', '/signup-endpoint', true);
+            xhr.open('POST', '/login-endpoint', true);
             xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
 
             xhr.onload = function() {
@@ -99,8 +97,7 @@
             };
 
             const data = {
-                name: document.querySelector('input[type="text"]').value,
-                email: document.querySelector('input[type="email"]').value,
+                email: document.querySelector('input[type="text"]').value,
                 password: document.querySelector('input[type="password"]').value
             };
 
