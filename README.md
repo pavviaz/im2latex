@@ -9,7 +9,7 @@
 <h3 align="center">DeepScriptum</h3>
 
   <p align="center">
-    Convert any PDF into it's LaTeX source
+    Convert any file into it's MarkDown source
     <br />
     <a href="http://89.105.198.171:8501">View Demo</a>
   </p>
