@@ -313,7 +313,7 @@
         <div class="content-header">
             <h1 id="documentTitle"></h1>
             <div class="button-group">
-                <button id="downloadButton">Download</button>
+                <button onclick="downloadAsMD()" id="downloadButton">Download</button>
                 <button id="shareButton">Share</button>
                 <button id="logoffButton">Log Off</button>
             </div>
@@ -346,6 +346,7 @@
     <script>
         let currentDoc = null;
         let currentDocId = null;
+        let currentDocName = null;
 
         async function fetchDocuments() {
             try {
@@ -429,6 +430,7 @@
                 const doc = await response.json();
                 currentDoc = doc;
                 currentDocId = id;
+                currentDocName = name;
 
                 document.getElementById('editor').value = doc.content;
                 document.getElementById('documentTitle').textContent = name;
@@ -469,6 +471,26 @@
             const popup = document.getElementById('sharePopup');
             popup.style.display = 'none';
         }
+        function downloadAsMD(fileName = `${currentDocName}.md`) {
+            // Создаем Blob из текста с типом 'text/markdown'
+            const blob = new Blob([currentDoc.content], { type: 'text/markdown' });
+          
+            // Создаем временный URL для Blob
+            const url = window.URL.createObjectURL(blob);
+          
+            // Создаем скрытую ссылку для скачивания
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = fileName; // Имя файла
+            document.body.appendChild(link);
+          
+            // Эмулируем клик для скачивания
+            link.click();
+          
+            // Удаляем ссылку и освобождаем память
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+          }
 
         document.getElementById('fileUpload').addEventListener('change', async function (e) {
             const file = e.target.files[0];

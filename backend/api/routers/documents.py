@@ -142,6 +142,4 @@ async def get_document(
     async with response["Body"] as stream:
         content = await stream.read()
 
-    print(content, flush=True)
-
     return {"content": content.decode("utf-8")}
