@@ -1,0 +1,9 @@
+FROM python:3.11
+
+RUN apt-get update && apt-get install -y
+
+WORKDIR /frontend
+
+COPY requirements.txt /frontend/
+RUN pip install -r requirements.txt
+COPY . /frontend/

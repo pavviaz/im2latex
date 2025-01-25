@@ -1,6 +1,6 @@
 FROM python:3.11
 
-RUN apt-get update && apt-get install libgl1 ffmpeg -y
+RUN apt-get update && apt-get install libgl1 ffmpeg poppler-utils -y
 
 WORKDIR /neural_worker
 

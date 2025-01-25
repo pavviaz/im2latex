@@ -23,6 +23,11 @@
             text-align: center;
             width: 300px;
         }
+        .error-message {
+            color: red;
+            margin-top: 10px;
+            display: none; /* Initially hidden */
+        }
         .logo {
             margin-bottom: 20px;
         }
@@ -67,49 +72,105 @@
 <body>
 
     <div class="signup-container">
-        <img src="logo.png" alt="Logo" class="logo" width="50">
+        <img src="/assets/images/ds_logo_book.png" alt="Logo" class="logo" width="75">
         <h2>Sign Up</h2>
-        <input type="text" placeholder="Enter your name">
-        <input type="email" placeholder="Enter your email address">
-        <input type="password" placeholder="Password">
+        <input id="email" type="email" placeholder="Enter your email address">
+        <input id="password" type="password" placeholder="Password">
+        <input id="rep_password" type="password" placeholder="Repeat password">
         <button id="signupButton">Sign up</button>
-        <p>Already have an account? <a href="login.html">Log in</a></p>
+        <p class="error-message" id="errorMessage"></p>
+        <p>Already have an account? <a href="/auth/login">Log in</a></p>
     </div>
 
     <div class="footer">
-        <p>Privacy | © 2025 | Contact us</p>
+        <p>DeepScriptum | © 2025</p>
     </div>
 
     <script>
-        // Обработка нажатия на кнопку "Sign up"
-        document.getElementById('signupButton').addEventListener('click', function() {
-            // Заглушка для регистрации
-            alert('Регистрация выполнена.');
+        function getCookie(name) {
+			const value = `; ${document.cookie}`;
+			const parts = value.split(`; ${name}=`);
+			if (parts.length === 2) return parts.pop().split(';').shift();
+		}
 
-            // Закомментированное обращение к бэку
-            /*
+        function setCookie(name,value,days) {
+            var expires = "";
+            if (days) {
+                var date = new Date();
+                date.setTime(date.getTime() + (days*24*60*60*1000));
+                expires = "; expires=" + date.toUTCString();
+            }
+            document.cookie = name + "=" + (value || "")  + expires + "; path=/";
+        }
+
+
+        document.getElementById('signupButton').addEventListener('click', function() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const rep_password = document.getElementById('rep_password').value;
+            const errorMessage = document.getElementById('errorMessage');
+
+            // Reset error message
+            errorMessage.style.display = 'none';
+            errorMessage.textContent = '';
+
+            if (!validateEmail(email)) {
+                errorMessage.style.display = 'block';
+                errorMessage.textContent = 'Invalid email format';
+                return;
+            }
+
+            if (password != rep_password) {
+                errorMessage.style.display = 'block';
+                errorMessage.textContent = "Passwords don't match";
+                return;
+            }
+
+            // AJAX request
             const xhr = new XMLHttpRequest();
-            xhr.open('POST', '/signup-endpoint', true);
+            xhr.open('POST', '{{REGISTER_ENDPOINT}}', true); // Replace with the endpoint from FastAPI
+            console.log('{{REGISTER_ENDPOINT}}')
             xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
 
             xhr.onload = function() {
                 if (xhr.status === 200) {
-                    window.location.href = 'dashboard.html';
+                    const responseData = JSON.parse(xhr.responseText); // Парсим JSON
+                    const accessToken = responseData.access_token;
+
+                    setCookie("ds_auth", accessToken, 7)
+
+                    window.location.href = '/home'; // Redirect to dashboard
+                } else if (xhr.status === 403) {
+                    // Forbidden
+                    errorMessage.style.display = 'block';
+                    errorMessage.textContent = 'Wrong email or password';
+                } else {
+                    // Other error
+                    errorMessage.style.display = 'block';
+                    errorMessage.textContent = 'An error occurred';
                 }
             };
 
-            const data = {
-                name: document.querySelector('input[type="text"]').value,
-                email: document.querySelector('input[type="email"]').value,
-                password: document.querySelector('input[type="password"]').value
+            xhr.onerror = function() {
+                errorMessage.style.display = 'block';
+                errorMessage.textContent = 'Network error';
             };
 
-            xhr.send(JSON.stringify(data));
-            */
+            const data = {
+                email: email,
+                password: password
+            };
 
-            // Временная заглушка
-            window.location.href = 'dashboard.html';
+            console.log(JSON.stringify(data))
+
+            xhr.send(JSON.stringify(data));
+            
         });
+
+        function validateEmail(email) {
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(email);
+        }
     </script>
 
 </body>

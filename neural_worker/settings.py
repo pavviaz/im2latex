@@ -7,29 +7,24 @@ class ToolConfig:
     extra = "ignore"
 
 
-class AppSettings(BaseSettings):
-    PORT: int = 8080
-    JWT_SECRET: str = "secret"
-    JWT_ALGORITHM: str = "HS256"
-    JWT_EXPIRES_H: int = 48
-    COOKIE_NAME: str = "ds_auth"
-
-    HC_TIMEOUT: int = 30  # secs
-    HC_SLEEP: int = 5  # secs
+class NWSettings(BaseSettings):
+    OPENAI_KEY: str = ""
+    BASE_OPENAI_URL: str = ""
+    MODEL_NAME: str = "gpt-4o"
 
     class Config(ToolConfig):
-        env_prefix = "api_"
+        env_prefix = "nw_"
 
 
 class RedisSettings(BaseSettings):
     HOST: str = "redis"
     PORT: int = 6379
-    BACKEND_DB: int = 0
+    CELERY_DB: int = 1
 
     @computed_field(return_type=str)
     @property
     def URI(self):
-        return f"redis://{self.HOST}:{self.PORT}/{self.BACKEND_DB}"
+        return f"redis://{self.HOST}:{self.PORT}/{self.CELERY_DB}"
 
     class Config(ToolConfig):
         env_prefix = "redis_"
@@ -78,14 +73,14 @@ class PostgresSettings(BaseSettings):
     @computed_field(return_type=str)
     @property
     def URI(self):
-        return f"postgresql+asyncpg://{self.USER}:{self.PASSWORD}@{self.HOST}:{self.PORT}/{self.DB}"
-    
+        return f"postgresql://{self.USER}:{self.PASSWORD}@{self.HOST}:{self.PORT}/{self.DB}"
+
     class Config(ToolConfig):
         env_prefix = "postgres_"
 
 
 postgres_settings = PostgresSettings()
-app_settings = AppSettings()
+app_settings = NWSettings()
 redis_settings = RedisSettings()
 minio_settings = MinIOSettings()
 rabbitmq_settings = RabbitMQSettings()

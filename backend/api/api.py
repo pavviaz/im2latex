@@ -1,6 +1,8 @@
 import logging
 from contextlib import asynccontextmanager
+from time import sleep
 
+import aioboto3
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from starlette.middleware import Middleware
@@ -9,7 +11,7 @@ from starlette.middleware.cors import CORSMiddleware
 import settings
 import api.healthchecker as hc
 from infrastructure.postgres import database
-from .routers import auth_router
+from .routers import auth_router, doc_router
 
 
 @asynccontextmanager
@@ -19,27 +21,32 @@ async def init_tables(app: FastAPI):
     hc.Readiness(urls=urls_to_check, logger=app.state.Logger).run()
 
     # Init DB tables if not exist
-    # async with database.engine.begin() as conn:
-    #     await conn.run_sync(database.Base.metadata.create_all)
-    #     await init_db(conn, database.fd)
+    for _ in range(5):
+        try:
+            async with database.engine.begin() as conn:
+                await conn.run_sync(database.Base.metadata.create_all)
+        except:
+            print("DB is not ready yet")
+            sleep(settings.app_settings.HC_SLEEP)
+
+    # create bucket if not exist
+    async with aioboto3.Session().client(
+        "s3",
+        endpoint_url=settings.minio_settings.URI,
+        aws_access_key_id=settings.minio_settings.ROOT_USER,
+        aws_secret_access_key=settings.minio_settings.ROOT_PASSWORD,
+    ) as s3_client:
+        try:
+            await s3_client.head_bucket(Bucket=settings.minio_settings.BUCKET)
+        except Exception:
+            await s3_client.create_bucket(Bucket=settings.minio_settings.BUCKET)
 
     yield
 
 
-origins = ["*"]
-middleware = [
-    Middleware(
-        CORSMiddleware,
-        allow_origins=origins,
-        allow_methods=["*"],
-        allow_headers=["*"],
-        allow_credentials=True,
-    )
-]
 app = FastAPI(
     docs_url="/api/docs",
     openapi_url="/api/openapi.json",
-    middleware=middleware,
     lifespan=init_tables,
 )
 
@@ -47,6 +54,16 @@ app.state.Logger = logging.getLogger(name="deepscriptum_backend")
 app.state.Logger.setLevel("DEBUG")
 
 app.include_router(auth_router, prefix="/api")
+app.include_router(doc_router, prefix="/api")
+
+origins = ["*"]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    allow_credentials=True,
+)
 
 
 @app.get("/")
@@ -57,18 +74,28 @@ async def root():
 @app.middleware("http")
 async def db_session_middleware(request: Request, call_next):
     request.state.db = database.async_session_factory()
-    try:
-        response = await call_next(request)
-    except Exception as exc:
-        detail = getattr(exc, "detail", None)
-        unexpected_error = not detail
-        if unexpected_error:
-            args = getattr(exc, "args", None)
-            detail = args[0] if args else str(exc)
-        status_code = getattr(exc, "status_code", 500)
-        response = JSONResponse(
-            content={"detail": str(detail), "success": False}, status_code=status_code
-        )
-    finally:
-        await request.state.db.close()
+    async with aioboto3.Session().client(
+        "s3",
+        endpoint_url=settings.minio_settings.URI,
+        aws_access_key_id=settings.minio_settings.ROOT_USER,
+        aws_secret_access_key=settings.minio_settings.ROOT_PASSWORD,
+    ) as s3_client:
+        request.state.s3 = s3_client
+        try:
+            response = await call_next(request)
+        except Exception as exc:
+            print(exc, flush=True)
+            detail = getattr(exc, "detail", None)
+            unexpected_error = not detail
+            if unexpected_error:
+                args = getattr(exc, "args", None)
+                detail = args[0] if args else str(exc)
+            status_code = getattr(exc, "status_code", 500)
+            response = JSONResponse(
+                content={"detail": str(detail), "success": False},
+                status_code=status_code,
+            )
+        finally:
+            await request.state.db.close()
+
     return response

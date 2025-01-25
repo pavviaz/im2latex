@@ -1,9 +1,0 @@
-FROM python:3.11
-
-RUN apt-get update && apt-get install poppler-utils -y
-
-WORKDIR /api
-
-COPY requirements.txt /api/
-RUN pip install -r requirements.txt
-COPY . /api/

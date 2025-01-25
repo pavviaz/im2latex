@@ -24,7 +24,7 @@ class EntityAlreadyExistsError(BaseAPIException):
         super().__init__(detail=detail, status_code=HTTPStatus.CONFLICT)
 
 
-class BaseAuthError:
+class BaseAuthError(BaseAPIException):
     def __init__(self, *, detail: str):
         super().__init__(detail=detail, status_code=HTTPStatus.FORBIDDEN)
 

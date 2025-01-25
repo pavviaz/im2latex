@@ -1,8 +1,7 @@
 from typing import Optional
 from datetime import datetime, timedelta
 
-import bcrypt
-from fastapi.security import OAuth2PasswordRequestForm
+from passlib.hash import bcrypt
 import sqlalchemy as sa
 from jose import jwt, JWTError
 from pydantic import ValidationError
@@ -26,7 +25,7 @@ class UserAuthRepository:
         return bcrypt.verify(plain_password, hashed_password)
 
     @classmethod
-    def verify_token(cls, token: str) -> BaseUser:
+    def verify_token(cls, token: str) -> str:
         try:
             payload_raw = jwt.decode(
                 token, app_settings.JWT_SECRET, algorithms=[app_settings.JWT_ALGORITHM]
@@ -35,7 +34,7 @@ class UserAuthRepository:
         except (JWTError, ValidationError):
             raise InvalidTokenError(detail="Could not validate credentials")
 
-        return payload.user
+        return payload.sub
 
     @classmethod
     def create_token(cls, user: UserDAO) -> Token:

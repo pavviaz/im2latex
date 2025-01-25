@@ -52,37 +52,37 @@ services:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_LOGIN}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
 
-  # worker:
-  #   restart: "no"
-  #   mem_limit: 8G
-  #   container_name: worker
+  worker:
+    restart: "no"
+    mem_limit: 1G
+    container_name: worker
 
-  #   build: 
-  #     context: ./neural_worker
-  #     dockerfile: Dockerfile
-  #   # command: bash -c "celery -A celery_services worker -l info -E -c 1 --loglevel=info"
-  #   command: bash -c "celery -A celery_services worker -l info -E -P solo --loglevel=info"
+    build: 
+      context: ./neural_worker
+      dockerfile: Dockerfile
+    command: bash -c "celery -A celery_services worker -l info -E -c ${NW_CONCURRENCY_COUNT} --loglevel=info"
 
-  #   environment:
-  #     - CELERY_BROKER_URL=${RABBITMQ_IP}
-  #     - CELERY_RESULT_BACKEND=${REDIS_IP}
-  #     - OPENAI_KEY=${OPENAI_KEY}
+    volumes:
+      - ./neural_worker:/neural_worker
+
+    env_file:
+      - ./.env
       
-  #   depends_on:
-  #     - redis
-  #     - rabbitmq
+    depends_on:
+      - redis
+      - rabbitmq
       
-  # celery-flower:
-  #   image: mher/flower:0.9.7
-  #   command: ['flower', '--broker=${RABBITMQ_IP}']
+  celery-flower:
+    image: mher/flower:0.9.7
+    command: ['flower', '--broker=redis://${REDIS_HOST}:${REDIS_PORT}/${REDIS_CELERY_DB}']
 
-  #   environment:
-  #     - FLOWER_PORT=5555
+    environment:
+      - FLOWER_PORT=${FLOWER_PORT}
 
-  #   ports:
-  #     - 5555:5555
-  #   depends_on:
-  #     - rabbitmq
+    ports:
+      - ${FLOWER_PORT}:${FLOWER_PORT}
+    depends_on:
+      - rabbitmq
 
   backend:
     restart: "no"
@@ -103,9 +103,29 @@ services:
     ports:
       - "${API_PORT}:${API_PORT}"
     depends_on:
-      # - celery-flower
-      # - worker
-      - rabbitmq
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+
+  frontend:
+    restart: "no"
+    mem_limit: 1G
+    container_name: frontend_api
+
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile
+    command: bash -c "uvicorn app:app --host 0.0.0.0 --port ${FRONT_PORT}"
+
+    volumes:
+      - ./frontend:/frontend
+
+    env_file:
+      - ./.env
+
+    ports:
+      - "${FRONT_PORT}:${FRONT_PORT}"
 
   postgres:
     restart: always
@@ -125,3 +145,9 @@ services:
     command: "-p ${POSTGRES_PORT}"
     ports:
       - "${POSTGRES_PORT}:${POSTGRES_PORT}"
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 3s
+      timeout: 3s
+      retries: 5

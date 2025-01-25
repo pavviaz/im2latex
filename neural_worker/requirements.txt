@@ -1,3 +1,11 @@
 celery==5.3.4
-redis
-requests
+requests==2.32.3
+pydantic==2.10.5
+pydantic-settings==2.7.1
+pydantic_core==2.27.2
+openai==1.60.1
+redis==5.2.1
+pdf2image==1.17.0
+SQLAlchemy==2.0.37
+boto3==1.36.6
+psycopg2-binary==2.9.10

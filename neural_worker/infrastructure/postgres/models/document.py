@@ -1,12 +1,18 @@
 import uuid
+import enum
 from datetime import datetime
 
 from sqlalchemy import String, TIMESTAMP, Enum
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
 
-from domain.document.model import ShareRoleEnum
 from infrastructure.postgres.database import Base
+
+
+class ShareRoleEnum(enum.Enum):
+    private = "закрытый доступ"
+    viewer = "только просмотр"
+    edit = "редактирование"
 
 
 class DocumentDAO(Base):
