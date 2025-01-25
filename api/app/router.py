@@ -1,14 +1,15 @@
 import os
 import uuid
-from io import BytesIO
-import base64
+# from io import BytesIO
+# import base64
 
 from fastapi import APIRouter, UploadFile, File, Cookie, Form
 from fastapi.responses import JSONResponse
 from fastapi import status
 from celery import Celery
 from celery.result import AsyncResult
-from pdf2image import convert_from_bytes
+
+from app.utils import process_file
 
 
 celery = Celery(__name__)
@@ -29,10 +30,10 @@ def hello_world():
     )
 
 
-@router.post("/pdf")
-async def create_pdf_task(
+@router.post("/transform")
+async def create_transform_task(
     decode_type: str = Form(default="md"),
-    pdf_file: UploadFile = File(),
+    file: UploadFile = File(),
     proc_task_id: str | None = Cookie(default="-1"),
 ):
     """
@@ -46,8 +47,8 @@ async def create_pdf_task(
 
     Args:
         decode_type (str): The desired output format,
-        can be 'md' or 'latex'.
-        pdf_file (UploadFile): User's PDF document to be processed.
+        can be 'md'.
+        file (UploadFile): User's document to be processed.
         proc_task_id (str, optional): The task ID of the OCR task.
         Passed as a cookie in the request. Defaults to "-1".
 
@@ -65,17 +66,15 @@ async def create_pdf_task(
     else:
         res.forget()
 
-    pdf_binary = await pdf_file.read()
-    pdf_imgs = convert_from_bytes(pdf_binary)
+    file_binary = await file.read()
 
-    pdf_base64 = []
-    for img in pdf_imgs:
-        buffered = BytesIO()
-        img.save(buffered, format="JPEG")
-        pdf_base64.append(base64.b64encode(buffered.getvalue()).decode())
+    file_type, data = await process_file(file_binary)
 
     task_id = str(uuid.uuid4())
-    celery.send_task("images", args=(pdf_base64, decode_type), task_id=task_id)
+    if file_type in ["pdf", "image"]:
+        celery.send_task("images", args=(data, decode_type), task_id=task_id)
+    else:
+        celery.send_task("texts", args=(data, decode_type), task_id=task_id)
 
     resp = JSONResponse(
         status_code=status.HTTP_201_CREATED,

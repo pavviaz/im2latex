@@ -2,7 +2,7 @@ version: "2.3"
 
 services:
   redis:
-    restart: "no"
+    restart: "always"
     mem_limit: 1G
     container_name: redis_backend
 
@@ -15,7 +15,7 @@ services:
       - '6379:6379'
 
   rabbitmq:
-    restart: "no"
+    restart: "always"
     mem_limit: 2G
     container_name: rabbitmq_broker
 
@@ -35,20 +35,21 @@ services:
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWD}
   
   worker:
-    restart: "no"
+    restart: "always"
     mem_limit: 8G
     container_name: worker
 
     build: 
       context: ./neural_worker
       dockerfile: Dockerfile
-    # command: bash -c "celery -A celery_services worker -l info -E -c 1 --loglevel=info"
+    # command: bash -c "celery -A celery_services worker -l info -E -c 3 --loglevel=info"
     command: bash -c "celery -A celery_services worker -l info -E -P solo --loglevel=info"
 
     environment:
       - CELERY_BROKER_URL=${RABBITMQ_IP}
       - CELERY_RESULT_BACKEND=${REDIS_IP}
       - OPENAI_KEY=${OPENAI_KEY}
+      - BASE_OPENAI_URL=${BASE_OPENAI_URL}
       
     depends_on:
       - redis
@@ -67,31 +68,24 @@ services:
       - rabbitmq
 
   api:
-    restart: "no"
+    restart: "always"
     mem_limit: 4G
     container_name: api
 
     build: 
       context: ./api
       dockerfile: Dockerfile
-    command: bash -c "uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    command: bash -c "uvicorn app.main:app --host 0.0.0.0 --port 5050"
 
     environment:
       - CELERY_BROKER_URL=${RABBITMQ_IP}
       - CELERY_RESULT_BACKEND=${REDIS_IP}
+
+    ports:
+      - 5050:5050
 
     depends_on:
       - celery-flower
       - worker
       - rabbitmq
 
-  streamlit:
-    container_name: streamlit
-    build: 
-      context: ./streamlit
-      dockerfile: Dockerfile
-
-    command: ['streamlit', 'run', 'ui.py']
-
-    ports:
-      - 8501:8501
